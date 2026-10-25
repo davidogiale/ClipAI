@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,6 +47,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val settingsStore = SettingsStore(app)
     private val ai = AiClient()
     private val finder = HighlightFinder(ai)
+    private val importer = LinkImporter()
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -53,6 +55,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val ctx: Context get() = getApplication()
     private val clipsDir: File get() = File(ctx.filesDir, "clips")
+    private val downloadsDir: File get() = File(ctx.filesDir, "downloads")
 
     // ---------- video ----------
 
@@ -61,15 +64,43 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (s.working || s.rendering) return
         viewModelScope.launch {
             try {
-                val info = withContext(Dispatchers.IO) {
-                    clipsDir.deleteRecursively()
-                    readVideoInfo(ctx, uri)
-                }
-                _state.update { UiState(video = info, options = it.options) }
+                loadVideo(uri, null, cleanDownloads = true)
             } catch (e: Exception) {
                 _state.update { it.copy(error = "Couldn't open that video: ${e.message}") }
             }
         }
+    }
+
+    /** YouTube, Google Drive or direct .mp4 link -> downloaded into the app, then loaded like a gallery video. */
+    fun importLink(text: String) {
+        val s = _state.value
+        if (s.working || s.rendering || text.isBlank()) return
+        job = viewModelScope.launch {
+            _state.update { it.copy(working = true, error = null, status = "Starting download…", progress = null, log = emptyList()) }
+            try {
+                withContext(Dispatchers.IO) { downloadsDir.deleteRecursively() }
+                val result = importer.import(text, downloadsDir, _state.value.options.downloadMaxHeight) { msg, p ->
+                    if (_state.value.status != msg) status(msg, p)
+                }
+                loadVideo(Uri.fromFile(result.file), result.title, cleanDownloads = false)
+            } catch (e: CancellationException) {
+                withContext(NonCancellable + Dispatchers.IO) { downloadsDir.deleteRecursively() }
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(error = e.message ?: e.toString()) }
+            } finally {
+                _state.update { it.copy(working = false, status = "", progress = null) }
+            }
+        }
+    }
+
+    private suspend fun loadVideo(uri: Uri, name: String?, cleanDownloads: Boolean) {
+        val info = withContext(Dispatchers.IO) {
+            clipsDir.deleteRecursively()
+            if (cleanDownloads) downloadsDir.deleteRecursively()
+            readVideoInfo(ctx, uri)
+        }
+        _state.update { UiState(video = if (name != null) info.copy(name = name) else info, options = it.options) }
     }
 
     fun setOptions(o: ClipOptions) {

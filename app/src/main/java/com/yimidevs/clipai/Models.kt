@@ -33,6 +33,7 @@ data class ClipOptions(
     val maxSec: Int = 60,
     val frame: FrameMode = FrameMode.VERTICAL_CROP,
     val captions: Boolean = true,
+    val downloadMaxHeight: Int = 720, // max quality for YouTube downloads
 )
 
 /** width/height are the size as displayed (rotation already applied). */

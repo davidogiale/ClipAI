@@ -145,6 +145,8 @@ fun HomeScreen(state: UiState, vm: MainViewModel, onOpenSettings: () -> Unit) {
                 }
             }
 
+            item { LinkCard(state, vm, busy) }
+
             if (state.video != null) item { OptionsCard(state, vm, busy) }
 
             if (state.working) item {
@@ -179,6 +181,45 @@ fun HomeScreen(state: UiState, vm: MainViewModel, onOpenSettings: () -> Unit) {
                 item { Spacer(Modifier.padding(24.dp)) }
             }
         }
+    }
+}
+
+@Composable
+private fun LinkCard(state: UiState, vm: MainViewModel, busy: Boolean) {
+    val context = LocalContext.current
+    var link by rememberSaveable { mutableStateOf("") }
+    val o = state.options
+    SectionCard {
+        Text("Or use a link", style = MaterialTheme.typography.titleMedium)
+        OutlinedTextField(
+            value = link,
+            onValueChange = { link = it },
+            label = { Text("YouTube or Google Drive link") },
+            singleLine = true,
+            enabled = !busy,
+            trailingIcon = {
+                TextButton(onClick = { link = clipboardText(context) }, enabled = !busy) { Text("Paste") }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text("YouTube quality", style = MaterialTheme.typography.labelMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(480, 720, 1080).forEach { h ->
+                FilterChip(
+                    selected = o.downloadMaxHeight == h,
+                    onClick = { vm.setOptions(o.copy(downloadMaxHeight = h)) },
+                    label = { Text("${h}p") },
+                    enabled = !busy,
+                )
+            }
+        }
+        Hint("Data used for a 1-hour video: about 400 MB at 480p, 700 MB at 720p, 1.3 GB at 1080p. Drive files download at their original size.")
+        Button(
+            onClick = { vm.importLink(link) },
+            enabled = !busy && link.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Download video") }
+        Hint("Tip: in the YouTube app, tap Share → ClipAI to send a link here directly. Drive files must be shared as \"Anyone with the link\".")
     }
 }
 

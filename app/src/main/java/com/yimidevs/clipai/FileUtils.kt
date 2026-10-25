@@ -55,6 +55,13 @@ fun shareVideo(context: Context, file: File, text: String) {
     context.startActivity(Intent.createChooser(intent, "Share clip"))
 }
 
+fun clipboardText(context: Context): String {
+    val cm = context.getSystemService(ClipboardManager::class.java) ?: return ""
+    val clip = cm.primaryClip ?: return ""
+    if (clip.itemCount == 0) return ""
+    return clip.getItemAt(0).coerceToText(context)?.toString().orEmpty().trim()
+}
+
 fun copyText(context: Context, text: String) {
     val cm = context.getSystemService(ClipboardManager::class.java)
     cm?.setPrimaryClip(ClipData.newPlainText("Clip caption", text))

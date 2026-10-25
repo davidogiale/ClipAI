@@ -31,11 +31,16 @@ class MainActivity : ComponentActivity() {
         handleShare(intent)
     }
 
-    /** A video shared into the app from Gallery/Files/YouTube-downloader etc. */
+    /** A video shared from Gallery/Files, or a link shared from the YouTube/Drive app. */
     private fun handleShare(intent: Intent?) {
         if (intent?.action != Intent.ACTION_SEND) return
-        if (intent.type?.startsWith("video/") != true) return
-        streamUri(intent)?.let { vm.setVideo(it) }
+        val type = intent.type ?: return
+        when {
+            type.startsWith("video/") -> streamUri(intent)?.let { vm.setVideo(it) }
+            type == "text/plain" -> intent.getStringExtra(Intent.EXTRA_TEXT)
+                ?.takeIf { LinkImporter.extractUrl(it) != null }
+                ?.let { vm.importLink(it) }
+        }
     }
 
     @Suppress("DEPRECATION")

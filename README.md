@@ -3,7 +3,7 @@
 Turn a long video (podcast, interview, stream, talk) into short vertical clips for TikTok, Reels and Shorts.
 
 **What it does**
-1. You pick a video from your phone (or tap *Share → ClipAI* from Gallery/Files).
+1. You pick a video from your phone, **paste a YouTube or Google Drive link** (or a direct .mp4 link), or tap *Share → ClipAI* from Gallery, Files or the YouTube app.
 2. It pulls out the audio and sends it to a **free Whisper** model (Groq) → full transcript with word timings.
 3. A **free AI model** (Gemini, Groq or OpenRouter) reads the transcript and picks the moments most likely to go viral, with a title, hook, reason, score and hashtags.
 4. On your phone, it cuts each clip, reframes it to **9:16 (1080×1920)** and burns in **animated word-by-word captions** (current word highlighted in green).
@@ -50,6 +50,8 @@ Any other OpenAI-compatible API works too (choose *Custom*), e.g. a local Ollama
 - With Gemini, the whole transcript goes in one request. With Groq as the clip AI, a 1-hour transcript is split into ~5 requests and the app waits automatically when the per-minute limit is hit.
 
 ## 4. Things to know
+- YouTube links use the open-source [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor) (GPL-3.0). YouTube changes often; if links stop working, bump its version in `app/build.gradle.kts` to the latest release and push.
+- Google Drive links must be shared as "Anyone with the link".
 - 9:16 crop keeps the **centre** of the frame. Works well for single-speaker and most podcast shots; for two people sitting far apart, try *9:16 fit*.
 - The video needs talking; music-only videos have nothing to transcribe.
 - Free tiers may use what you send to improve their models (Google says reviewers may read free-tier prompts outside the EEA/UK). Don't clip private recordings.
