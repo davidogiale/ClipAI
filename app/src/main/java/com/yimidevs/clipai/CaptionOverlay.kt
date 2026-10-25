@@ -9,7 +9,7 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.effect.OverlaySettings
+import androidx.media3.common.OverlaySettings
 import androidx.media3.effect.StaticOverlaySettings
 import androidx.media3.effect.TextOverlay
 
